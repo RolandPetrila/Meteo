@@ -180,44 +180,43 @@ Utilizatorul are deja mai multe API keys obtinute. Modelul AI si serviciul se vo
 
 ### Faza 0: Pregatire (tu, manual)
 
-- [ ] Obtine API key OpenWeatherMap (ghid detaliat in Partea 2, Sectiunea B, Sursa 1)
-- [ ] Obtine API key WeatherAPI.com (ghid detaliat in Partea 2, Sectiunea B, Sursa 2)
-- [ ] AI service: SE VA STABILI ULTERIOR (utilizatorul are deja mai multe API keys)
-- [x] Backend: **Railway.app** (DECIS)
+- [x] Obtine API key OpenWeatherMap — DONE, configurat pe Vercel
+- [x] Obtine API key WeatherAPI.com — DONE, configurat pe Vercel
+- [x] GOOGLE_API_KEY obtinut — disponibil pentru AI summary (Gemini Flash)
+- [x] Backend: **Vercel Serverless** (schimbat de la Railway — proiect unic Next.js)
 
-### Faza 1: Backend (Claude Code implementeaza)
+### Faza 1: Backend (Claude Code implementeaza) — COMPLET
 
-- [ ] Structura proiect Python (FastAPI)
-- [ ] Conectori pentru fiecare sursa meteo
-- [ ] Logica de agregare (merge date din surse multiple)
-- [ ] Cache cu SQLite (15 min TTL)
-- [ ] Endpoint-uri API (/weather, /locations, etc.)
-- [ ] Integrare AI (Gemini Flash)
+- [x] Structura proiect TypeScript (Next.js API Routes — schimbat de la Python/FastAPI)
+- [x] Conectori pentru fiecare sursa meteo (4 surse active)
+- [x] Logica de agregare (merge date din surse multiple cu weighted average)
+- [x] Cache in-memory cu TTL 15min (compatibil serverless)
+- [x] Endpoint-uri API (3 routes: weather, hourly, comparison)
+- [x] AI summary template-based in romana (AI real cu Gemini — de implementat)
 
-### Faza 2: Frontend (Claude Code implementeaza)
+### Faza 2: Frontend (Claude Code implementeaza) — COMPLET
 
-- [ ] Proiect Next.js + Tailwind CSS
-- [ ] Pagina principala cu card meteo + rezumat AI
-- [ ] Tab Orar — grafic 24h (temperatura, umiditate)
-- [ ] Tab 7 Zile — prognoza saptamanala
-- [ ] Tab Comparatie — tabel diferente intre surse
-- [ ] Tab Harta — click pe harta = selecteaza locatie noua
-- [ ] Design responsive (mobile-first)
+- [x] Proiect Next.js + Tailwind CSS
+- [x] Pagina principala cu card meteo + rezumat AI
+- [x] Tab Orar — grafic 24h (temperatura, umiditate)
+- [x] Tab 7 Zile — prognoza saptamanala
+- [x] Tab Comparatie — tabel diferente intre surse
+- [x] Tab Harta — click pe harta = selecteaza locatie noua (Leaflet/OpenStreetMap)
+- [x] Design responsive (mobile-first)
 
-### Faza 3: Conectare Frontend + Backend
+### Faza 3: Conectare Frontend + Backend — COMPLET
 
-- [ ] Frontend cere date de la backend
-- [ ] Tratare erori (sursa indisponibila, timeout)
-- [ ] Loading states (indicator de incarcare)
-- [ ] Refresh manual + ultima actualizare
+- [x] Frontend cere date de la API routes (acelasi domeniu, fara CORS)
+- [x] Tratare erori (sursa indisponibila, timeout)
+- [x] Loading states (indicator de incarcare)
+- [x] Refresh manual + ultima actualizare
 
-### Faza 4: Publicare Online
+### Faza 4: Publicare Online — COMPLET
 
-- [ ] Deploy frontend pe Vercel
-- [ ] Deploy backend pe Railway/Render
-- [ ] Configurare variabile de mediu (API keys)
-- [ ] Testare pe telefon + laptop
-- [ ] Link final de acces
+- [x] Deploy pe Vercel (proiect unic, fara backend separat)
+- [x] Configurare variabile de mediu (API keys pe Vercel)
+- [ ] Testare pe telefon Android (PWA)
+- [x] Link final de acces: https://meteo-ten-mu.vercel.app
 
 ---
 
@@ -257,26 +256,31 @@ Meteo/
 
 ## PARTEA 6: DECIZII CONFIRMATE
 
-1. **Backend hosting:** ✅ **Railway.app** — nu adoarme, 500 ore/luna (suficient)
+1. **Hosting:** ✅ **Vercel** — proiect unic Next.js (frontend + API routes), fara backend separat
 
-2. **Cate surse meteo:** ✅ **Toate 4** (Open-Meteo + OpenWeatherMap + WeatherAPI + ECMWF)
+2. **Cate surse meteo:** ✅ **Toate 4 ACTIVE** (Open-Meteo + ECMWF + OpenWeatherMap + WeatherAPI)
+   - API keys configurate pe Vercel (Production + Preview)
    - Arhitectura ramane deschisa pentru adaugarea de surse noi ulterior
 
-3. **AI service:** ⏳ **SE VA STABILI ULTERIOR** — utilizatorul are mai multe API keys deja obtinute
+3. **AI service:** ⏳ **Google Gemini Flash** — GOOGLE_API_KEY disponibil, de implementat
 
-4. **Dark mode:** ✅ **DA** — tema intunecata inclusa
+4. **Dark mode:** ✅ **DA** — tema intunecata inclusa (auto + toggle manual)
 
 5. **Notificari push:** ❌ **NU** — nu se doresc notificari
 
 6. **Limba:** ✅ **Doar romana**
+
+7. **PWA:** ✅ **DA** — instalabil pe Android
 
 ---
 
 ## PARTEA 7: REPO GITHUB
 
 - **Repository:** https://github.com/RolandPetrila/Meteo.git
-- **Vizibilitate:** Private
+- **Vizibilitate:** Public
 - **Branch principal:** main
+- **Live URL:** https://meteo-ten-mu.vercel.app
+- **Vercel Dashboard:** https://vercel.com/rolandpetrilas-projects/meteo
 
 ---
 
@@ -408,25 +412,25 @@ Asa vezi instant unde sursele sunt de acord si unde difera.
 
 ## PARTEA 10: PRIORITIZARE FUNCTIONALITATI
 
-### Must Have (obligatoriu la lansare)
+### Must Have (obligatoriu la lansare) — COMPLET
 
-- [x] 4 surse meteo cu fetch paralel
-- [ ] PWA Android (instalabila pe telefon)
-- [ ] Dark mode (auto + toggle manual)
-- [ ] Indicator incredere per sursa (procent)
-- [ ] Prognoza agregata ponderata
-- [ ] Tab-uri: Orar, 7 Zile, Comparatie, Harta
-- [ ] AI summary in romana
-- [ ] Locatie default Nadlac + selectie pe harta
-- [ ] Responsive mobile-first
+- [x] 4 surse meteo cu fetch paralel — TOATE 4 ACTIVE
+- [x] PWA Android (instalabila pe telefon)
+- [x] Dark mode (auto + toggle manual)
+- [x] Indicator incredere per sursa (procent) — confidence scoring implementat
+- [x] Prognoza agregata ponderata — weighted average dupa confidence
+- [x] Tab-uri: Orar, 7 Zile, Comparatie, Harta
+- [x] AI summary in romana — template-based (AI real cu Gemini = viitor)
+- [x] Locatie default Nadlac + selectie pe harta
+- [x] Responsive mobile-first
 
 ### Should Have (important, dar nu blocheaza lansarea)
 
-- [ ] Indicator "Acord surse" (verde/galben/rosu)
+- [x] Indicator "Acord surse" (verde/galben/rosu) — implementat
 - [ ] Grafic comparatie surse pe aceeasi axa
 - [ ] Salvare locatii favorite
 - [ ] Countdown pana la refresh
-- [ ] Detectare GPS
+- [x] Detectare GPS — implementat in useLocation hook
 
 ### Nice to Have (faza ulterioara)
 
