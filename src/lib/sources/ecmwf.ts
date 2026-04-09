@@ -15,27 +15,43 @@ export class ECMWFSource implements WeatherSource {
   name = "ecmwf";
 
   async fetchCurrent(lat: number, lon: number): Promise<CurrentData> {
+    // ECMWF pe Open-Meteo nu suporta "current" — extragem din prima ora hourly
     const params = new URLSearchParams({
       latitude: lat.toString(),
       longitude: lon.toString(),
-      current:
+      hourly:
         "temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,weather_code",
       timezone: "Europe/Bucharest",
+      forecast_hours: "3",
     });
 
     const resp = await fetch(`${BASE_URL}?${params}`, {
       signal: AbortSignal.timeout(TIMEOUT),
     });
     const data = await resp.json();
-    const current = data.current || {};
-    const condition = wmoToCondition(current.weather_code ?? 0);
+    const hourly = data.hourly || {};
+
+    // Gasim ora cea mai apropiata de acum
+    const now = Date.now();
+    const times: string[] = hourly.time || [];
+    let idx = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < times.length; i++) {
+      const diff = Math.abs(new Date(times[i]).getTime() - now);
+      if (diff < minDiff) {
+        minDiff = diff;
+        idx = i;
+      }
+    }
+
+    const condition = wmoToCondition(hourly.weather_code?.[idx] ?? 0);
 
     return {
-      temperature: current.temperature_2m ?? 0,
-      humidity: Math.round(current.relative_humidity_2m ?? 0),
-      wind_speed: current.wind_speed_10m ?? 0,
-      wind_direction: Math.round(current.wind_direction_10m ?? 0),
-      precipitation: current.precipitation ?? 0,
+      temperature: hourly.temperature_2m?.[idx] ?? 0,
+      humidity: Math.round(hourly.relative_humidity_2m?.[idx] ?? 0),
+      wind_speed: hourly.wind_speed_10m?.[idx] ?? 0,
+      wind_direction: Math.round(hourly.wind_direction_10m?.[idx] ?? 0),
+      precipitation: hourly.precipitation?.[idx] ?? 0,
       condition,
       condition_icon: getConditionIcon(condition),
     };
