@@ -281,3 +281,155 @@ Meteo/
 ---
 
 **Status:** Decizii confirmate. Document actualizat. Gata pentru implementare.
+
+---
+
+## PARTEA 8: FUNCTIONALITATI NOI (adaugate 2026-04-09)
+
+### 8.1 PWA — Progressive Web App (aplicatie instalabila pe Android)
+
+**Ce inseamna:** Pagina web se poate "instala" pe telefonul Android ca o aplicatie normala.
+Apare cu icoana pe ecranul principal, se deschide fullscreen (fara bara de browser).
+
+**Ce include:**
+
+- Fisier `manifest.json` — defineste numele, icoana, culoarea aplicatiei
+- Service Worker — permite incarcarea rapida si functionare de baza offline
+- Icoana aplicatiei (mai multe marimi: 192px, 512px)
+- Splash screen la deschidere
+- Prompt "Adauga pe ecranul principal" la prima vizita
+
+**Cum se instaleaza pe Android:**
+
+1. Deschizi link-ul in Chrome
+2. Apare banner "Adauga pe ecranul principal" (sau din meniu ⋮ > Instaleaza)
+3. Gata — ai icoana pe telefon ca orice aplicatie
+
+### 8.2 Indicator de incredere per sursa (Confidence Score)
+
+**Ce inseamna:** Fiecare sursa meteo afiseaza un procent (ex: 87%) care arata cat de mult poti sa te bazezi pe datele ei.
+
+**Cum se calculeaza:**
+
+- **Disponibilitate sursa:** sursa a raspuns sau a dat timeout? (+/- puncte)
+- **Concordanta cu celelalte surse:** daca 3 din 4 surse zic 15°C si una zice 22°C, cea din urma primeste scor mic
+- **Deviatie fata de medie:** cu cat o sursa difera mai mult de media celorlalte, cu atat scorul e mai mic
+- **Istoric acuratete:** (optional, ulterior) comparam ce a prezis sursa vs ce s-a intamplat real
+
+**Cum se afiseaza:**
+
+```
+┌─────────────────────────────────────┐
+│ Open-Meteo          15°C    ██ 92% │
+│ OpenWeatherMap      14°C    ██ 88% │
+│ WeatherAPI          15°C    ██ 90% │
+│ ECMWF               —      ⚠  N/A │ (timeout)
+│─────────────────────────────────────│
+│ PROGNOZA AGREGATA   15°C    ██ 90% │
+│ (media ponderata cu scorul)        │
+└─────────────────────────────────────┘
+```
+
+**Prognoza finala** = media ponderata (sursa cu scor mai mare conteaza mai mult).
+
+### 8.3 Dark Mode
+
+- Tema intunecata activata automat daca telefonul e pe dark mode
+- Toggle manual (buton in header) pentru a schimba tema
+- Salvare preferinta in localStorage (se pastreaza intre vizite)
+- Culori: fundal inchis (#1a1a2e), text deschis, accente albastre
+
+---
+
+## PARTEA 9: SUGESTII SI IMBUNATATIRI (propuse de Claude Code)
+
+### 9.1 Prognoza agregata inteligenta (RECOMANDAT)
+
+In loc sa afisezi doar media simpla, calculam **media ponderata** — sursele cu scor de incredere mai mare conteaza mai mult in prognoza finala.
+
+Exemplu: daca Open-Meteo (92%) zice 15°C si OpenWeather (88%) zice 14°C:
+
+- Media simpla: 14.5°C
+- Media ponderata: 14.56°C (mai aproape de Open-Meteo care are scor mai mare)
+
+### 9.2 Indicator "Acord surse" (RECOMANDAT)
+
+Un indicator vizual simplu care arata cat de mult sunt de acord sursele intre ele:
+
+- 🟢 **Acord puternic** — toate sursele difera cu < 2°C
+- 🟡 **Acord moderat** — diferenta 2-5°C
+- 🔴 **Dezacord** — diferenta > 5°C (atentie, prognoza nesigura!)
+
+### 9.3 Ultima actualizare + Countdown refresh (RECOMANDAT)
+
+- Afiseaza cand s-au actualizat ultima data datele: "Actualizat acum 3 min"
+- Bara de progres vizuala pana la urmatoarea actualizare automata (15 min ciclu)
+- Buton manual "Actualizeaza acum"
+
+### 9.4 Grafic comparatie surse pe aceeasi axa (RECOMANDAT)
+
+In tab-ul Orar, toate sursele pe acelasi grafic cu linii colorate diferit:
+
+- Linia rosie: Open-Meteo
+- Linia albastra: OpenWeatherMap
+- Linia verde: WeatherAPI
+- Zona umbrita: intervalul de incertitudine (min-max intre surse)
+
+Asa vezi instant unde sursele sunt de acord si unde difera.
+
+### 9.5 Salvare locatii favorite (RECOMANDAT)
+
+- Buton "Salveaza locatia" pe harta
+- Lista de locatii favorite (localStorage)
+- Switch rapid intre locatii fara a cauta pe harta din nou
+- Default: Nadlac (mereu primul in lista)
+
+### 9.6 Detectare automata locatie GPS (RELEVANT)
+
+- La prima deschidere, intreaba "Vrei sa folosesc locatia ta curenta?"
+- Daca da → foloseste GPS-ul telefonului
+- Daca nu → ramane pe Nadlac (default)
+- Functionalitate utila cand calatoresti
+
+### 9.7 Rezumat vocal AI (OVERKILL — optional ulterior)
+
+- Buton "Asculta prognoza" — AI-ul citeste rezumatul cu voce
+- Foloseste Web Speech API (gratuit, in browser)
+- Util dimineata cand te pregatesti de plecare
+
+### 9.8 Istoric prognoza vs realitate (RELEVANT — faza ulterioara)
+
+- Salvam ce a prezis fiecare sursa
+- Dupa ce trece ziua, comparam cu ce s-a intamplat real
+- Construim un "clasament de acuratete" al surselor in timp
+- Ajusteaza automat scorurile de incredere pe baza istoricului
+
+---
+
+## PARTEA 10: PRIORITIZARE FUNCTIONALITATI
+
+### Must Have (obligatoriu la lansare)
+
+- [x] 4 surse meteo cu fetch paralel
+- [ ] PWA Android (instalabila pe telefon)
+- [ ] Dark mode (auto + toggle manual)
+- [ ] Indicator incredere per sursa (procent)
+- [ ] Prognoza agregata ponderata
+- [ ] Tab-uri: Orar, 7 Zile, Comparatie, Harta
+- [ ] AI summary in romana
+- [ ] Locatie default Nadlac + selectie pe harta
+- [ ] Responsive mobile-first
+
+### Should Have (important, dar nu blocheaza lansarea)
+
+- [ ] Indicator "Acord surse" (verde/galben/rosu)
+- [ ] Grafic comparatie surse pe aceeasi axa
+- [ ] Salvare locatii favorite
+- [ ] Countdown pana la refresh
+- [ ] Detectare GPS
+
+### Nice to Have (faza ulterioara)
+
+- [ ] Istoric prognoza vs realitate
+- [ ] Clasament acuratete surse
+- [ ] Rezumat vocal AI
