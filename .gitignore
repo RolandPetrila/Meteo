@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build
+.next/
+out/
+build/
+dist/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# PWA generated (by build tools, not our manual sw.js)
+frontend/public/workbox-*.js
+frontend/public/swe-worker-*.js
+
+# Python
+*.egg-info/
+venv/
+.venv/
