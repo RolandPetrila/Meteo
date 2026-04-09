@@ -9,7 +9,7 @@ import RefreshBar from "@/components/RefreshBar";
 import InstallPrompt from "@/components/InstallPrompt";
 
 export default function Home() {
-  const { currentLocation, setLocation, requestGPS, gpsLoading } =
+  const { currentLocation, setLocation, requestGPS, gpsLoading, gpsError } =
     useLocation();
   const { data, loading, error, refresh, lastUpdated } = useWeather(
     currentLocation.latitude,
@@ -27,6 +27,7 @@ export default function Home() {
         onGPSClick={requestGPS}
         gpsLoading={gpsLoading}
         confidence={data?.aggregated_confidence || 0}
+        gpsError={gpsError}
       />
 
       <InstallPrompt />

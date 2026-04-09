@@ -15,6 +15,7 @@ export function useLocation() {
   });
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(CURRENT_KEY);
@@ -80,15 +81,37 @@ export function useLocation() {
   );
 
   const requestGPS = useCallback(() => {
-    if (!navigator.geolocation) return;
+    setGpsError(null);
+
+    if (!navigator.geolocation) {
+      setGpsError("GPS-ul nu este disponibil pe acest dispozitiv");
+      return;
+    }
+
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation(pos.coords.latitude, pos.coords.longitude, "Locația mea");
         setGpsLoading(false);
+        setGpsError(null);
       },
-      () => {
+      (err) => {
         setGpsLoading(false);
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setGpsError("Permite accesul la locație din setările browserului");
+            break;
+          case err.POSITION_UNAVAILABLE:
+            setGpsError("Locația nu poate fi determinată. Verifică GPS-ul.");
+            break;
+          case err.TIMEOUT:
+            setGpsError(
+              "Timeout — încearcă din nou într-un loc cu semnal mai bun",
+            );
+            break;
+          default:
+            setGpsError("Eroare la detectarea locației");
+        }
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -102,5 +125,6 @@ export function useLocation() {
     removeFavorite,
     requestGPS,
     gpsLoading,
+    gpsError,
   };
 }
