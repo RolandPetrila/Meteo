@@ -138,25 +138,52 @@ Folosește limba română. Tonul: prietenos, direct.`;
       return null;
     }
 
+    // Curata eventual cod markdown din raspuns
+    let cleaned = text.trim();
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+    }
+
     try {
-      const parsed = JSON.parse(text.trim());
-      if (!parsed.summary || !parsed.recommendation) {
-        console.log("[AI] Gemini JSON incomplet:", text.slice(0, 200));
+      const parsed = JSON.parse(cleaned);
+
+      // Accepta variante de nume pentru campuri (Gemini poate schimba numele)
+      const summary =
+        parsed.summary ||
+        parsed.rezumat ||
+        parsed.weather_summary ||
+        parsed.description ||
+        parsed.text;
+      const recommendation =
+        parsed.recommendation ||
+        parsed.recomandare ||
+        parsed.advice ||
+        parsed.suggestion ||
+        parsed.tip;
+
+      if (!summary || !recommendation) {
+        console.log(
+          "[AI] Gemini JSON fara campuri asteptate. Keys:",
+          Object.keys(parsed).join(","),
+        );
+        console.log("[AI] Text p1:", cleaned.slice(0, 150));
+        console.log("[AI] Text p2:", cleaned.slice(150, 300));
         return null;
       }
+
       console.log("[AI] Gemini OK");
       return {
-        summary: parsed.summary,
-        recommendation: parsed.recommendation,
+        summary: String(summary),
+        recommendation: String(recommendation),
         alert: fallback.alert,
       };
     } catch (parseErr) {
       console.log(
         "[AI] Gemini JSON parse err:",
         (parseErr as Error).message,
-        "text:",
-        text.slice(0, 200),
       );
+      console.log("[AI] Text p1:", cleaned.slice(0, 150));
+      console.log("[AI] Text p2:", cleaned.slice(150, 300));
       return null;
     }
   } catch (err) {
