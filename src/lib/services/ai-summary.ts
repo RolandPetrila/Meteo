@@ -162,12 +162,9 @@ Folosește limba română. Tonul: prietenos, direct.`;
         parsed.tip;
 
       if (!summary || !recommendation) {
-        console.log(
-          "[AI] Gemini JSON fara campuri asteptate. Keys:",
-          Object.keys(parsed).join(","),
+        console.error(
+          `[AI-DEBUG] Keys=${Object.keys(parsed).join(",")} | Raw=${JSON.stringify(cleaned).slice(0, 500)}`,
         );
-        console.log("[AI] Text p1:", cleaned.slice(0, 150));
-        console.log("[AI] Text p2:", cleaned.slice(150, 300));
         return null;
       }
 
@@ -178,10 +175,7 @@ Folosește limba română. Tonul: prietenos, direct.`;
         alert: fallback.alert,
       };
     } catch (parseErr) {
-      console.log(
-        "[AI] Gemini JSON parse err:",
-        (parseErr as Error).message,
-      );
+      console.log("[AI] Gemini JSON parse err:", (parseErr as Error).message);
       console.log("[AI] Text p1:", cleaned.slice(0, 150));
       console.log("[AI] Text p2:", cleaned.slice(150, 300));
       return null;
