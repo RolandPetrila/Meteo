@@ -50,7 +50,7 @@ async function fetchWithTiming(
   }
 }
 
-function calculateConfidence(
+export function calculateConfidence(
   sourceTemps: Record<string, number>,
 ): Record<string, number> {
   const values = Object.values(sourceTemps);
@@ -72,7 +72,7 @@ function calculateConfidence(
   return scores;
 }
 
-function calculateAgreement(
+export function calculateAgreement(
   sourceTemps: Record<string, number>,
 ): AgreementInfo {
   const values = Object.values(sourceTemps);
@@ -110,7 +110,7 @@ function calculateAgreement(
   };
 }
 
-function weightedAverage(
+export function weightedAverage(
   temps: Record<string, number>,
   confidence: Record<string, number>,
 ): number {
@@ -126,7 +126,7 @@ function weightedAverage(
     : Math.round((weightedSum / totalWeight) * 10) / 10;
 }
 
-function majorityCondition(conditions: Record<string, string>): string {
+export function majorityCondition(conditions: Record<string, string>): string {
   const counts: Record<string, number> = {};
   for (const c of Object.values(conditions)) {
     counts[c] = (counts[c] || 0) + 1;
