@@ -33,6 +33,11 @@ Thumbs.db
 # Vercel
 .vercel/
 
+# Claude Code local settings + sesiuni paralele
+.claude/
+Gemini_Documentatie/
+.claude-outputs/
+
 # PWA generated (by build tools, not our manual sw.js)
 frontend/public/workbox-*.js
 frontend/public/swe-worker-*.js

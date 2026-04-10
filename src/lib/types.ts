@@ -74,7 +74,7 @@ export interface WeatherResponse {
   current: CurrentWeather;
   forecast_hourly: HourlyForecast[];
   forecast_7days: DailyForecast[];
-  today_sources: TodaySourceTemp[];
+  today_sources?: TodaySourceTemp[];
   comparison: SourceData[];
   agreement: AgreementInfo;
   aggregated_confidence: number;

@@ -140,7 +140,7 @@ export default function HourlyTab({ hourly }: HourlyTabProps) {
 
             return (
               <div
-                key={h.hour}
+                key={h.timestamp}
                 className="flex items-center justify-between px-4 py-2.5"
               >
                 <div className="flex items-center gap-3">

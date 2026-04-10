@@ -314,14 +314,16 @@ export async function aggregateDaily(
   const days = sortedDates.map((dateStr) => {
     const items = daysData[dateStr];
 
-    // Calculeaza confidence pe baza temp_max
+    // Calculeaza confidence separat pentru temp_max si temp_min
+    // (o sursa poate fi outlier doar pe una dintre ele)
     const maxTemps: Record<string, number> = {};
     const minTemps: Record<string, number> = {};
     for (const item of items) {
       maxTemps[item.source] = item.data.temp_max;
       minTemps[item.source] = item.data.temp_min;
     }
-    const confidence = calculateConfidence(maxTemps);
+    const confidenceMax = calculateConfidence(maxTemps);
+    const confidenceMin = calculateConfidence(minTemps);
 
     const conditions = items.map((i) => i.data.condition);
     const condCounts: Record<string, number> = {};
@@ -347,8 +349,8 @@ export async function aggregateDaily(
     return {
       date: dateStr,
       day_name: items[0].data.day_name,
-      temp_min: weightedAverage(minTemps, confidence),
-      temp_max: weightedAverage(maxTemps, confidence),
+      temp_min: weightedAverage(minTemps, confidenceMin),
+      temp_max: weightedAverage(maxTemps, confidenceMax),
       humidity: avgHumidity,
       precipitation:
         Math.round(Math.max(...items.map((i) => i.data.precipitation)) * 10) /
