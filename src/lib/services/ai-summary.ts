@@ -84,10 +84,7 @@ async function tryGemini(
   fallback: AISummary,
 ): Promise<AISummary | null> {
   const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    console.log("[AI] GOOGLE_API_KEY lipseste");
-    return null;
-  }
+  if (!apiKey) return null;
 
   const condText = describeCondition(current.condition);
   const prompt = `Ești un asistent meteo prietenos pentru România. Generează un rezumat scurt și o recomandare practică pentru utilizator.
@@ -123,20 +120,11 @@ Folosește limba română. Tonul: prietenos, direct.`;
     });
     clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      console.log("[AI] Gemini HTTP eroare:", res.status, await res.text());
-      return null;
-    }
+    if (!res.ok) return null;
     const json = await res.json();
     const text: string | undefined =
       json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      console.log(
-        "[AI] Gemini raspuns fara text:",
-        JSON.stringify(json).slice(0, 300),
-      );
-      return null;
-    }
+    if (!text) return null;
 
     // Curata eventual cod markdown din raspuns
     let cleaned = text.trim();
@@ -166,27 +154,17 @@ Folosește limba română. Tonul: prietenos, direct.`;
         parsed.suggestion ||
         parsed.tip;
 
-      if (!summary || !recommendation) {
-        console.error(
-          `[AI-DEBUG] Keys=${Object.keys(parsed).join(",")} | Raw=${JSON.stringify(cleaned).slice(0, 500)}`,
-        );
-        return null;
-      }
+      if (!summary || !recommendation) return null;
 
-      console.log("[AI] Gemini OK");
       return {
         summary: String(summary),
         recommendation: String(recommendation),
         alert: fallback.alert,
       };
-    } catch (parseErr) {
-      console.error(
-        `[AI-DEBUG] ParseErr=${(parseErr as Error).message} | Raw=${JSON.stringify(cleaned).slice(0, 500)}`,
-      );
+    } catch {
       return null;
     }
-  } catch (err) {
-    console.log("[AI] Gemini fetch err:", (err as Error).message);
+  } catch {
     return null;
   }
 }
