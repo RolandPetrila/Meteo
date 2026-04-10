@@ -28,7 +28,7 @@ export default function Header({
               onGPSClick();
             }}
             disabled={gpsLoading}
-            className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-primary-500/10 dark:bg-primary-500/20
+            className="w-12 h-12 rounded-xl bg-primary-500/10 dark:bg-primary-500/20
                        flex items-center justify-center transition-colors duration-150 hover:bg-primary-500/20
                        active:bg-primary-500/30 disabled:opacity-50 touch-manipulation relative z-10
                        select-none cursor-pointer"

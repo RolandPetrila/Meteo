@@ -43,6 +43,13 @@ export function useLocation() {
     }
   }, []);
 
+  // Cleanup timer la unmount pentru a preveni setState pe componenta moarta
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
   const setLocation = useCallback((lat: number, lon: number, name?: string) => {
     const loc = {
       name: name || `${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E`,
