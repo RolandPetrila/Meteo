@@ -49,6 +49,11 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+  }
 }
 
 /* Leaflet fix pentru dark mode */

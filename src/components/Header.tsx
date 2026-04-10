@@ -18,19 +18,25 @@ export default function Header({
   gpsError,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-dark-bg/80 border-b border-gray-200/50 dark:border-dark-border/50">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-dark-bg/80 border-b border-gray-200/50 dark:border-dark-border/50 pt-[env(safe-area-inset-top,0px)]">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onGPSClick}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onGPSClick();
+            }}
             disabled={gpsLoading}
-            className="w-10 h-10 rounded-xl bg-primary-500/10 dark:bg-primary-500/20
-                       flex items-center justify-center transition-all hover:bg-primary-500/20
-                       active:scale-95 disabled:opacity-50"
+            className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-primary-500/10 dark:bg-primary-500/20
+                       flex items-center justify-center transition-colors duration-150 hover:bg-primary-500/20
+                       active:bg-primary-500/30 disabled:opacity-50 touch-manipulation relative z-10
+                       select-none cursor-pointer"
             aria-label="Localizare GPS"
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg
-              className={`w-5 h-5 text-primary-500 ${gpsLoading ? "animate-pulse" : ""}`}
+              className={`w-6 h-6 text-primary-500 pointer-events-none ${gpsLoading ? "animate-pulse" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

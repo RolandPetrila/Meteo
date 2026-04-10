@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DEFAULT_LAT, DEFAULT_LON, DEFAULT_NAME } from "@/lib/constants";
 import type { FavoriteLocation } from "@/lib/types";
 
@@ -16,6 +16,13 @@ export function useLocation() {
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const setGpsErrorWithAutoDismiss = useCallback((msg: string) => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    setGpsError(msg);
+    errorTimerRef.current = setTimeout(() => setGpsError(null), 8000);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem(CURRENT_KEY);
@@ -81,10 +88,13 @@ export function useLocation() {
   );
 
   const requestGPS = useCallback(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     setGpsError(null);
 
     if (!navigator.geolocation) {
-      setGpsError("GPS-ul nu este disponibil pe acest dispozitiv");
+      setGpsErrorWithAutoDismiss(
+        "GPS-ul nu este disponibil pe acest dispozitiv",
+      );
       return;
     }
 
@@ -99,23 +109,27 @@ export function useLocation() {
         setGpsLoading(false);
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            setGpsError("Permite accesul la locație din setările browserului");
+            setGpsErrorWithAutoDismiss(
+              "Permite accesul la locație din setările browserului",
+            );
             break;
           case err.POSITION_UNAVAILABLE:
-            setGpsError("Locația nu poate fi determinată. Verifică GPS-ul.");
+            setGpsErrorWithAutoDismiss(
+              "Locația nu poate fi determinată. Verifică GPS-ul.",
+            );
             break;
           case err.TIMEOUT:
-            setGpsError(
+            setGpsErrorWithAutoDismiss(
               "Timeout — încearcă din nou într-un loc cu semnal mai bun",
             );
             break;
           default:
-            setGpsError("Eroare la detectarea locației");
+            setGpsErrorWithAutoDismiss("Eroare la detectarea locației");
         }
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
-  }, [setLocation]);
+  }, [setLocation, setGpsErrorWithAutoDismiss]);
 
   return {
     currentLocation,
