@@ -54,6 +54,14 @@ export interface AgreementInfo {
   description: string;
 }
 
+export interface TodaySourceTemp {
+  source: string;
+  label: string;
+  temp_min: number;
+  temp_max: number;
+  confidence: number;
+}
+
 export interface AISummary {
   summary: string;
   recommendation: string;
@@ -66,6 +74,7 @@ export interface WeatherResponse {
   current: CurrentWeather;
   forecast_hourly: HourlyForecast[];
   forecast_7days: DailyForecast[];
+  today_sources: TodaySourceTemp[];
   comparison: SourceData[];
   agreement: AgreementInfo;
   aggregated_confidence: number;

@@ -93,6 +93,8 @@ export default function Home() {
             current={data.current}
             aiSummary={data.ai_summary}
             agreement={data.agreement}
+            todayForecast={data.forecast_7days?.[0]}
+            todaySources={data.today_sources}
           />
           <RefreshBar
             lastUpdated={lastUpdated}

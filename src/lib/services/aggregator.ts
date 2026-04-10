@@ -12,6 +12,7 @@ import type {
   CurrentWeather,
   HourlyForecast,
   DailyForecast,
+  TodaySourceTemp,
 } from "@/lib/types";
 
 interface FetchResult {
@@ -262,68 +263,101 @@ export async function aggregateHourly(
   }));
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  open_meteo: "Open-Meteo",
+  ecmwf: "ECMWF",
+  openweather: "OpenWeather",
+  weatherapi: "WeatherAPI",
+};
+
 export async function aggregateDaily(
   lat: number,
   lon: number,
-): Promise<DailyForecast[]> {
+): Promise<{ days: DailyForecast[]; todaySources: TodaySourceTemp[] }> {
   const sources = getAllSources();
   const results = await Promise.all(
     sources.map((s) => fetchWithTiming(s, "fetchDaily", lat, lon)),
   );
 
-  const daysData: Record<string, DailyData[]> = {};
+  // Pastreaza sursa pentru fiecare DailyData
+  const daysData: Record<string, { source: string; data: DailyData }[]> = {};
   for (const r of results) {
     if (r.ok && r.data) {
       for (const day of r.data as DailyData[]) {
         if (!daysData[day.date]) daysData[day.date] = [];
-        daysData[day.date].push(day);
+        daysData[day.date].push({ source: r.name, data: day });
       }
     }
   }
 
-  return Object.keys(daysData)
-    .sort()
-    .slice(0, 7)
-    .map((dateStr) => {
-      const items = daysData[dateStr];
-      const mins = items.map((d) => d.temp_min);
-      const maxs = items.map((d) => d.temp_max);
-      const conditions = items.map((d) => d.condition);
-      const condCounts: Record<string, number> = {};
-      for (const c of conditions) condCounts[c] = (condCounts[c] || 0) + 1;
-      let bestCond = "necunoscut";
-      let bestCount = 0;
-      for (const [c, n] of Object.entries(condCounts)) {
-        if (n > bestCount) {
-          bestCond = c;
-          bestCount = n;
-        }
+  const sortedDates = Object.keys(daysData).sort().slice(0, 7);
+
+  // Calculeaza per-sursa pentru ziua de azi (prima zi)
+  let todaySources: TodaySourceTemp[] = [];
+  if (sortedDates.length > 0) {
+    const todayItems = daysData[sortedDates[0]];
+    const todayMaxTemps: Record<string, number> = {};
+    for (const item of todayItems) {
+      todayMaxTemps[item.source] = item.data.temp_max;
+    }
+    const todayConfidence = calculateConfidence(todayMaxTemps);
+
+    todaySources = todayItems.map((item) => ({
+      source: item.source,
+      label: SOURCE_LABELS[item.source] || item.source,
+      temp_min: item.data.temp_min,
+      temp_max: item.data.temp_max,
+      confidence: todayConfidence[item.source] || 50,
+    }));
+  }
+
+  const days = sortedDates.map((dateStr) => {
+    const items = daysData[dateStr];
+
+    // Calculeaza confidence pe baza temp_max
+    const maxTemps: Record<string, number> = {};
+    const minTemps: Record<string, number> = {};
+    for (const item of items) {
+      maxTemps[item.source] = item.data.temp_max;
+      minTemps[item.source] = item.data.temp_min;
+    }
+    const confidence = calculateConfidence(maxTemps);
+
+    const conditions = items.map((i) => i.data.condition);
+    const condCounts: Record<string, number> = {};
+    for (const c of conditions) condCounts[c] = (condCounts[c] || 0) + 1;
+    let bestCond = "necunoscut";
+    let bestCount = 0;
+    for (const [c, n] of Object.entries(condCounts)) {
+      if (n > bestCount) {
+        bestCond = c;
+        bestCount = n;
       }
+    }
 
-      // Media humidity din sursele care o ofera (Open-Meteo o calculeaza)
-      const humidities = items
-        .map((d) => d.humidity)
-        .filter((h): h is number => typeof h === "number" && h > 0);
-      const avgHumidity =
-        humidities.length > 0
-          ? Math.round(
-              humidities.reduce((a, b) => a + b, 0) / humidities.length,
-            )
-          : 0;
+    // Media humidity din sursele care o ofera
+    const humidities = items
+      .map((i) => i.data.humidity)
+      .filter((h): h is number => typeof h === "number" && h > 0);
+    const avgHumidity =
+      humidities.length > 0
+        ? Math.round(humidities.reduce((a, b) => a + b, 0) / humidities.length)
+        : 0;
 
-      return {
-        date: dateStr,
-        day_name: items[0].day_name,
-        temp_min:
-          Math.round((mins.reduce((a, b) => a + b, 0) / mins.length) * 10) / 10,
-        temp_max:
-          Math.round((maxs.reduce((a, b) => a + b, 0) / maxs.length) * 10) / 10,
-        humidity: avgHumidity,
-        precipitation:
-          Math.round(Math.max(...items.map((d) => d.precipitation)) * 10) / 10,
-        wind_speed:
-          Math.round(Math.max(...items.map((d) => d.wind_speed)) * 10) / 10,
-        condition: bestCond,
-      };
-    });
+    return {
+      date: dateStr,
+      day_name: items[0].data.day_name,
+      temp_min: weightedAverage(minTemps, confidence),
+      temp_max: weightedAverage(maxTemps, confidence),
+      humidity: avgHumidity,
+      precipitation:
+        Math.round(Math.max(...items.map((i) => i.data.precipitation)) * 10) /
+        10,
+      wind_speed:
+        Math.round(Math.max(...items.map((i) => i.data.wind_speed)) * 10) / 10,
+      condition: bestCond,
+    };
+  });
+
+  return { days, todaySources };
 }

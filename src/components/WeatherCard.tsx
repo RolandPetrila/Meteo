@@ -1,19 +1,29 @@
 "use client";
 
 import { translateCondition } from "@/lib/utils";
-import type { CurrentWeather, AISummary, AgreementInfo } from "@/lib/types";
-import { getAgreementColor, getAgreementBg } from "@/lib/utils";
+import type {
+  CurrentWeather,
+  AISummary,
+  AgreementInfo,
+  DailyForecast,
+  TodaySourceTemp,
+} from "@/lib/types";
+import { getAgreementBg } from "@/lib/utils";
 
 interface WeatherCardProps {
   current: CurrentWeather;
   aiSummary: AISummary;
   agreement: AgreementInfo;
+  todayForecast?: DailyForecast;
+  todaySources?: TodaySourceTemp[];
 }
 
 export default function WeatherCard({
   current,
   aiSummary,
   agreement,
+  todayForecast,
+  todaySources,
 }: WeatherCardProps) {
   const conditionText = translateCondition(current.condition);
 
@@ -43,6 +53,22 @@ export default function WeatherCard({
                   {conditionText}
                 </span>
               </div>
+              {todayForecast && (
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15">
+                    <span className="text-sm opacity-70">☀️</span>
+                    <span className="text-sm font-semibold">
+                      {Math.round(todayForecast.temp_max)}°
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/15">
+                    <span className="text-sm opacity-70">🌙</span>
+                    <span className="text-sm font-semibold">
+                      {Math.round(todayForecast.temp_min)}°
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-right space-y-1 text-sm opacity-80">
               <div>💧 {current.humidity}%</div>
@@ -52,6 +78,46 @@ export default function WeatherCard({
               )}
             </div>
           </div>
+
+          {/* Temperaturi zi/noapte per sursa */}
+          {todaySources && todaySources.length > 0 && todayForecast && (
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <p className="text-xs font-medium opacity-70 mb-2.5 uppercase tracking-wide">
+                Temperaturi azi per sursă
+              </p>
+              <div className="space-y-1.5">
+                {todaySources.map((src) => (
+                  <div
+                    key={src.source}
+                    className="flex items-center justify-between text-sm px-2.5 py-1.5 rounded-lg bg-white/10"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{src.label}</span>
+                      <span className="text-xs opacity-50">
+                        {Math.round(src.confidence)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="opacity-80">
+                        ☀️ {Math.round(src.temp_max)}°
+                      </span>
+                      <span className="opacity-60">
+                        🌙 {Math.round(src.temp_min)}°
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Rezultat ponderat */}
+              <div className="flex items-center justify-between text-sm mt-2 px-2.5 py-2 rounded-lg bg-white/20 font-semibold">
+                <span>Rezultat ponderat</span>
+                <div className="flex items-center gap-3">
+                  <span>☀️ {Math.round(todayForecast.temp_max)}°</span>
+                  <span>🌙 {Math.round(todayForecast.temp_min)}°</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Indicator acord surse */}
           <div

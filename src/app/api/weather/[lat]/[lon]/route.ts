@@ -15,13 +15,24 @@ export const maxDuration = 30; // Vercel max 30s pe free tier
 const getAggregatedData = (lat: number, lon: number) => {
   return unstable_cache(
     async () => {
-      const [{ current, comparison, agreement, avgConfidence }, hourly, daily] =
-        await Promise.all([
-          aggregateCurrent(lat, lon),
-          aggregateHourly(lat, lon),
-          aggregateDaily(lat, lon),
-        ]);
-      return { current, comparison, agreement, avgConfidence, hourly, daily };
+      const [
+        { current, comparison, agreement, avgConfidence },
+        hourly,
+        { days: daily, todaySources },
+      ] = await Promise.all([
+        aggregateCurrent(lat, lon),
+        aggregateHourly(lat, lon),
+        aggregateDaily(lat, lon),
+      ]);
+      return {
+        current,
+        comparison,
+        agreement,
+        avgConfidence,
+        hourly,
+        daily,
+        todaySources,
+      };
     },
     [`weather-${lat.toFixed(3)}-${lon.toFixed(3)}`],
     { revalidate: 900 },
@@ -44,8 +55,15 @@ export async function GET(
   const { lat, lon } = validated;
 
   try {
-    const { current, comparison, agreement, avgConfidence, hourly, daily } =
-      await getAggregatedData(lat, lon);
+    const {
+      current,
+      comparison,
+      agreement,
+      avgConfidence,
+      hourly,
+      daily,
+      todaySources,
+    } = await getAggregatedData(lat, lon);
 
     const aiSummary = await generateSummary(current);
 
@@ -69,6 +87,7 @@ export async function GET(
       current,
       forecast_hourly: hourly,
       forecast_7days: daily,
+      today_sources: todaySources,
       comparison,
       agreement,
       aggregated_confidence: avgConfidence,
