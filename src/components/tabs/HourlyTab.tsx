@@ -1,16 +1,15 @@
 "use client";
 
-import {
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Area,
-  AreaChart,
-} from "recharts";
+import dynamic from "next/dynamic";
 import type { HourlyForecast } from "@/lib/types";
-import { translateCondition } from "@/lib/utils";
+
+// Dynamic import Recharts pentru bundle mai mic
+const TemperatureChart = dynamic(() => import("./TemperatureChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[220px] rounded-2xl bg-gray-100 dark:bg-dark-card animate-pulse" />
+  ),
+});
 
 interface HourlyTabProps {
   hourly: HourlyForecast[];
@@ -38,30 +37,34 @@ function getIcon(condition: string): string {
   return CONDITION_ICONS[condition] || "🌡️";
 }
 
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload: HourlyForecast }>;
-}) {
-  if (!active || !payload?.[0]) return null;
-  const data = payload[0].payload;
-  return (
-    <div className="bg-white dark:bg-dark-card rounded-xl p-3 shadow-lg border border-gray-200 dark:border-dark-border text-sm">
-      <p className="font-semibold text-gray-900 dark:text-white">{data.hour}</p>
-      <p className="text-gray-600 dark:text-gray-300">
-        🌡️ {data.temperature}°C
-      </p>
-      <p className="text-gray-600 dark:text-gray-300">💧 {data.humidity}%</p>
-      <p className="text-gray-600 dark:text-gray-300">
-        💨 {data.wind_speed} km/h
-      </p>
-      <p className="text-gray-600 dark:text-gray-300">
-        {translateCondition(data.condition)}
-      </p>
-    </div>
-  );
+const DAY_NAMES = [
+  "Duminică",
+  "Luni",
+  "Marți",
+  "Miercuri",
+  "Joi",
+  "Vineri",
+  "Sâmbătă",
+];
+
+function formatDayLabel(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  if (target.getTime() === today.getTime()) return "Astăzi";
+  if (target.getTime() === tomorrow.getTime()) return "Mâine";
+  return `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${date.toLocaleDateString("ro-RO", { month: "short" })}`;
+}
+
+function isNightHour(hourStr: string): boolean {
+  const h = parseInt(hourStr.split(":")[0], 10);
+  return h >= 21 || h < 7;
 }
 
 export default function HourlyTab({ hourly }: HourlyTabProps) {
@@ -73,96 +76,89 @@ export default function HourlyTab({ hourly }: HourlyTabProps) {
     );
   }
 
+  // Grupeaza orele per zi
+  const grouped: Record<string, HourlyForecast[]> = {};
+  for (const h of hourly) {
+    const dateKey = h.timestamp.split("T")[0];
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(h);
+  }
+  const sortedDates = Object.keys(grouped).sort();
+
   return (
     <div className="space-y-4">
-      {/* Grafic temperatura */}
+      {/* Grafic temperatura — primele 24 de ore */}
       <div className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-dark-border">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-          Temperatură (°C)
+        <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
+          Temperatură următoarele 24h
         </h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={hourly}>
-            <defs>
-              <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e5e7eb"
-              className="dark:opacity-20"
-            />
-            <XAxis
-              dataKey="hour"
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
-              tickLine={false}
-              axisLine={false}
-              width={35}
-              domain={["dataMin - 2", "dataMax + 2"]}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="temperature"
-              stroke="#3b82f6"
-              strokeWidth={2.5}
-              fill="url(#tempGradient)"
-              dot={false}
-              activeDot={{
-                r: 5,
-                fill: "#3b82f6",
-                stroke: "#fff",
-                strokeWidth: 2,
-              }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <TemperatureChart data={hourly.slice(0, 24)} />
       </div>
 
-      {/* Lista ore - 24h complet */}
+      {/* Lista ore — grupate per zi cu sticky headers */}
       <div className="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
-        <div className="divide-y divide-gray-100 dark:divide-dark-border">
-          {hourly.map((h) => {
-            const precipColor =
-              h.precipitation >= 5
-                ? "text-red-500"
-                : h.precipitation >= 1
-                  ? "text-amber-500"
-                  : h.precipitation > 0
-                    ? "text-blue-500"
-                    : "text-gray-300 dark:text-gray-600";
-
-            return (
-              <div
-                key={h.timestamp}
-                className="flex items-center justify-between px-4 py-2.5"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 w-12">
-                    {h.hour}
-                  </span>
-                  <span className="text-xl">{getIcon(h.condition)}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-base font-semibold text-gray-900 dark:text-white w-12 text-right">
-                    {Math.round(h.temperature)}°
-                  </span>
-                  <span className={`text-sm w-16 text-right ${precipColor}`}>
-                    {h.precipitation > 0
-                      ? `${h.precipitation.toFixed(1)} mm`
-                      : "—"}
-                  </span>
-                </div>
+        {sortedDates.map((dateKey) => {
+          const hours = grouped[dateKey];
+          return (
+            <div key={dateKey}>
+              {/* Sticky header pentru zi */}
+              <div className="sticky top-0 z-10 px-4 py-2 bg-gray-50/95 dark:bg-dark-surface/95 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                  {formatDayLabel(dateKey)}
+                </p>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Orele din ziua respectiva */}
+              <div className="divide-y divide-gray-100 dark:divide-dark-border">
+                {hours.map((h) => {
+                  const night = isNightHour(h.hour);
+                  const precipColor =
+                    h.precipitation >= 5
+                      ? "text-red-500"
+                      : h.precipitation >= 1
+                        ? "text-amber-500"
+                        : h.precipitation > 0
+                          ? "text-blue-500"
+                          : "text-gray-300 dark:text-gray-600";
+
+                  return (
+                    <div
+                      key={h.timestamp}
+                      className={`flex items-center justify-between px-4 py-2.5 ${
+                        night ? "bg-indigo-50/40 dark:bg-indigo-950/20" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`text-sm font-medium w-12 tabular-nums ${
+                            night
+                              ? "text-indigo-600 dark:text-indigo-300"
+                              : "text-gray-500 dark:text-gray-400"
+                          }`}
+                        >
+                          {h.hour}
+                        </span>
+                        <span className="text-xl">{getIcon(h.condition)}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-base font-semibold text-gray-900 dark:text-white w-12 text-right tabular-nums">
+                          {Math.round(h.temperature)}°
+                        </span>
+                        <span
+                          className={`text-sm w-16 text-right tabular-nums ${precipColor}`}
+                        >
+                          {h.precipitation > 0
+                            ? `${h.precipitation.toFixed(1)} mm`
+                            : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

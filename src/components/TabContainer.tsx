@@ -9,8 +9,8 @@ import MapTab from "./tabs/MapTab";
 
 const TABS = [
   { id: "hourly", label: "Orar", icon: "🕐" },
-  { id: "daily", label: "7 Zile", icon: "📅" },
-  { id: "compare", label: "Comparație", icon: "📊" },
+  { id: "daily", label: "Prognoză", icon: "📅" },
+  { id: "compare", label: "Surse", icon: "📊" },
   { id: "map", label: "Hartă", icon: "🗺️" },
 ] as const;
 
@@ -55,6 +55,7 @@ export default function TabContainer({
           <ComparisonTab
             comparison={data.comparison}
             agreement={data.agreement}
+            todaySources={data.today_sources}
           />
         )}
         {activeTab === "map" && (

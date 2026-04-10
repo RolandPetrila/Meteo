@@ -48,7 +48,7 @@ export class OpenMeteoSource implements WeatherSource {
       hourly:
         "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code",
       timezone: "Europe/Bucharest",
-      forecast_hours: "24",
+      forecast_days: "7",
     });
 
     const resp = await fetch(`${BASE_URL}?${params}`, {
@@ -80,7 +80,7 @@ export class OpenMeteoSource implements WeatherSource {
         "temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max",
       hourly: "relative_humidity_2m",
       timezone: "Europe/Bucharest",
-      forecast_days: "7",
+      forecast_days: "10",
     });
 
     const resp = await fetch(`${BASE_URL}?${params}`, {

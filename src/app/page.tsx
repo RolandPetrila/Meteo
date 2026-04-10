@@ -9,6 +9,7 @@ import WeatherCard from "@/components/WeatherCard";
 import TabContainer from "@/components/TabContainer";
 import RefreshBar from "@/components/RefreshBar";
 import InstallPrompt from "@/components/InstallPrompt";
+import Skeleton from "@/components/Skeleton";
 
 export default function Home() {
   const {
@@ -59,14 +60,7 @@ export default function Home() {
       <InstallPrompt />
 
       {/* Loading state */}
-      {loading && !data && (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-12 h-12 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Se încarcă datele meteo...
-          </p>
-        </div>
-      )}
+      {loading && !data && <Skeleton />}
 
       {/* Error state */}
       {error && !data && (
@@ -94,7 +88,6 @@ export default function Home() {
             aiSummary={data.ai_summary}
             agreement={data.agreement}
             todayForecast={data.forecast_7days?.[0]}
-            todaySources={data.today_sources}
           />
           <RefreshBar
             lastUpdated={lastUpdated}

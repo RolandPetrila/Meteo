@@ -290,7 +290,8 @@ export async function aggregateDaily(
     }
   }
 
-  const sortedDates = Object.keys(daysData).sort().slice(0, 7);
+  // Afiseaza maxim 10 zile (dincolo, prognoza devine speculativa)
+  const sortedDates = Object.keys(daysData).sort().slice(0, 10);
 
   // Calculeaza per-sursa pentru ziua de azi (prima zi)
   let todaySources: TodaySourceTemp[] = [];

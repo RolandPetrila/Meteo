@@ -92,7 +92,7 @@ export class ECMWFSource implements WeatherSource {
       daily:
         "temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max",
       timezone: "Europe/Bucharest",
-      forecast_days: "7",
+      forecast_days: "10",
     });
 
     const resp = await fetch(`${BASE_URL}?${params}`, {

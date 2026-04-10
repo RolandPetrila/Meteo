@@ -1,6 +1,6 @@
 "use client";
 
-import type { SourceData, AgreementInfo } from "@/lib/types";
+import type { SourceData, AgreementInfo, TodaySourceTemp } from "@/lib/types";
 import { SOURCE_NAMES, SOURCE_COLORS } from "@/lib/constants";
 import {
   translateCondition,
@@ -12,12 +12,20 @@ import ConfidenceBadge from "../ConfidenceBadge";
 interface ComparisonTabProps {
   comparison: SourceData[];
   agreement: AgreementInfo;
+  todaySources?: TodaySourceTemp[];
 }
 
 export default function ComparisonTab({
   comparison,
   agreement,
+  todaySources,
 }: ComparisonTabProps) {
+  // Lookup rapid pentru temp zi/noapte per sursa
+  const todayMap = new Map<string, TodaySourceTemp>();
+  if (todaySources) {
+    for (const t of todaySources) todayMap.set(t.source, t);
+  }
+
   return (
     <div className="space-y-3">
       {/* Indicator acord */}
@@ -92,6 +100,27 @@ export default function ComparisonTab({
                     ? `${source.wind_speed} km/h`
                     : "—"}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Temperaturi zi/noapte pentru azi (din daily forecast) */}
+          {source.available && todayMap.has(source.source) && (
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-dark-border text-sm">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Azi
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-60">☀️</span>
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {Math.round(todayMap.get(source.source)!.temp_max)}°
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-60">🌙</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  {Math.round(todayMap.get(source.source)!.temp_min)}°
+                </span>
               </div>
             </div>
           )}
