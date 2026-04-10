@@ -1,50 +1,53 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import {
   aggregateCurrent,
   aggregateHourly,
   aggregateDaily,
 } from "@/lib/services/aggregator";
 import { generateSummary } from "@/lib/services/ai-summary";
-import { getCached, setCache } from "@/lib/services/cache";
+import { validateCoords } from "@/lib/utils";
 import type { WeatherResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30; // Vercel max 30s pe free tier
+
+const getAggregatedData = (lat: number, lon: number) => {
+  return unstable_cache(
+    async () => {
+      const [{ current, comparison, agreement, avgConfidence }, hourly, daily] =
+        await Promise.all([
+          aggregateCurrent(lat, lon),
+          aggregateHourly(lat, lon),
+          aggregateDaily(lat, lon),
+        ]);
+      return { current, comparison, agreement, avgConfidence, hourly, daily };
+    },
+    [`weather-${lat.toFixed(3)}-${lon.toFixed(3)}`],
+    { revalidate: 900 },
+  )();
+};
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ lat: string; lon: string }> },
 ) {
   const { lat: latStr, lon: lonStr } = await params;
-  const lat = parseFloat(latStr);
-  const lon = parseFloat(lonStr);
+  const validated = validateCoords(latStr, lonStr);
 
-  if (
-    isNaN(lat) ||
-    isNaN(lon) ||
-    lat < -90 ||
-    lat > 90 ||
-    lon < -180 ||
-    lon > 180
-  ) {
-    return NextResponse.json({ error: "Coordonate invalide" }, { status: 400 });
+  if (!validated) {
+    return NextResponse.json(
+      { error: "Coordonate invalide. Lat: -90..90, Lon: -180..180" },
+      { status: 400 },
+    );
   }
-
-  // Check cache
-  const cached = getCached<WeatherResponse>(lat, lon, "full");
-  if (cached) {
-    return NextResponse.json({ ...cached, cache_hit: true });
-  }
+  const { lat, lon } = validated;
 
   try {
-    const [{ current, comparison, agreement, avgConfidence }, hourly, daily] =
-      await Promise.all([
-        aggregateCurrent(lat, lon),
-        aggregateHourly(lat, lon),
-        aggregateDaily(lat, lon),
-      ]);
+    const { current, comparison, agreement, avgConfidence, hourly, daily } =
+      await getAggregatedData(lat, lon);
 
-    const aiSummary = generateSummary(current);
+    const aiSummary = await generateSummary(current);
 
     // Determina numele locatiei
     const isNadlac =
@@ -70,10 +73,8 @@ export async function GET(
       agreement,
       aggregated_confidence: avgConfidence,
       ai_summary: aiSummary,
-      cache_hit: false,
+      cache_hit: true,
     };
-
-    setCache(lat, lon, response, "full");
 
     return NextResponse.json(response);
   } catch (error) {

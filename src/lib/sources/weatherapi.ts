@@ -7,7 +7,7 @@ import {
   getDayNameRo,
 } from "./base";
 
-const BASE_URL = "http://api.weatherapi.com/v1";
+const BASE_URL = "https://api.weatherapi.com/v1";
 const TIMEOUT = 15000;
 
 const WAPI_MAP: Record<string, string> = {

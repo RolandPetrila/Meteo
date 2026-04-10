@@ -29,6 +29,19 @@ export default function MapContent({
       maxZoom: 18,
     }).addTo(map);
 
+    fetch("https://api.rainviewer.com/public/weather-maps.json")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.radar && data.radar.past && data.radar.past.length > 0) {
+          const latestTime = data.radar.past[data.radar.past.length - 1].time;
+          L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
+            opacity: 0.6,
+            zIndex: 10,
+          }).addTo(map);
+        }
+      })
+      .catch(console.error);
+
     const marker = L.marker([latitude, longitude], {
       icon: L.divIcon({
         className: "custom-marker",

@@ -3,14 +3,24 @@
 import { useWeather } from "@/hooks/useWeather";
 import { useLocation } from "@/hooks/useLocation";
 import Header from "@/components/Header";
+import LocationSearch from "@/components/LocationSearch";
+import WeatherAlert from "@/components/WeatherAlert";
 import WeatherCard from "@/components/WeatherCard";
 import TabContainer from "@/components/TabContainer";
 import RefreshBar from "@/components/RefreshBar";
 import InstallPrompt from "@/components/InstallPrompt";
 
 export default function Home() {
-  const { currentLocation, setLocation, requestGPS, gpsLoading, gpsError } =
-    useLocation();
+  const {
+    currentLocation,
+    setLocation,
+    favorites,
+    addFavorite,
+    removeFavorite,
+    requestGPS,
+    gpsLoading,
+    gpsError,
+  } = useLocation();
   const { data, loading, error, refresh, lastUpdated } = useWeather(
     currentLocation.latitude,
     currentLocation.longitude,
@@ -20,15 +30,31 @@ export default function Home() {
     setLocation(lat, lon, name);
   };
 
+  const handleAddCurrentToFavorites = () => {
+    addFavorite(
+      currentLocation.name,
+      currentLocation.latitude,
+      currentLocation.longitude,
+    );
+  };
+
   return (
     <>
       <Header
-        locationName={currentLocation.name}
+        currentLocation={currentLocation}
+        favorites={favorites}
+        onSelectFavorite={handleLocationChange}
+        onAddFavorite={handleAddCurrentToFavorites}
+        onRemoveFavorite={removeFavorite}
         onGPSClick={requestGPS}
         gpsLoading={gpsLoading}
         confidence={data?.aggregated_confidence || 0}
         gpsError={gpsError}
       />
+
+      <div className="mx-4 mt-3">
+        <LocationSearch onSelect={handleLocationChange} />
+      </div>
 
       <InstallPrompt />
 
@@ -62,6 +88,7 @@ export default function Home() {
       {/* Weather data */}
       {data && (
         <>
+          <WeatherAlert hourly={data.forecast_hourly} current={data.current} />
           <WeatherCard
             current={data.current}
             aiSummary={data.ai_summary}

@@ -69,18 +69,144 @@ function checkAlerts(
   return alerts.length ? alerts.join(". ") + "." : null;
 }
 
-export function generateSummary(current: {
+interface CurrentInput {
   temperature: number;
   humidity: number;
   wind_speed: number;
   condition: string;
-}): AISummary {
+}
+
+/**
+ * Genereaza summary cu Google Gemini Flash. Returneaza null la eroare/fara cheie.
+ */
+async function tryGemini(
+  current: CurrentInput,
+  fallback: AISummary,
+): Promise<AISummary | null> {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) return null;
+
+  const condText = describeCondition(current.condition);
+  const prompt = `Ești un asistent meteo prietenos pentru România. Generează un rezumat scurt și o recomandare practică pentru utilizator.
+
+Vremea acum:
+- Temperatură: ${current.temperature}°C
+- Condiție: ${condText}
+- Umiditate: ${current.humidity}%
+- Vânt: ${current.wind_speed} km/h
+
+Răspunde STRICT în format JSON valid (fără markdown, fără \`\`\`json):
+{"summary": "1-2 propoziții scurte despre vreme", "recommendation": "1 propoziție cu recomandare practică (haine, umbrelă, etc.)"}
+
+Folosește limba română. Tonul: prietenos, direct.`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 200,
+          responseMimeType: "application/json",
+        },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    const text: string | undefined =
+      json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return null;
+
+    const parsed = JSON.parse(text.trim());
+    if (!parsed.summary || !parsed.recommendation) return null;
+
+    return {
+      summary: parsed.summary,
+      recommendation: parsed.recommendation,
+      alert: fallback.alert, // pastreaza alertele rule-based pentru siguranta
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Genereaza summary cu OpenAI (legacy fallback). Returneaza null la eroare.
+ */
+async function tryOpenAI(
+  current: CurrentInput,
+  fallback: AISummary,
+): Promise<AISummary | null> {
+  const apiKey = process.env.AI_API_KEY;
+  if (!apiKey) return null;
+
+  const condText = describeCondition(current.condition);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.AI_MODEL || "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Ești un asistent meteorologic. Rezumă starea vremii în 1-2 propoziții scurte și prietenoase, direct, fără alte comentarii.",
+          },
+          {
+            role: "user",
+            content: `Vremea actuală: ${current.temperature}°C, umiditate ${current.humidity}%, vânt ${current.wind_speed} km/h, condiție: ${condText}. Dă-mi un scurt rezumat.`,
+          },
+        ],
+        max_tokens: 80,
+        temperature: 0.7,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const summary = data.choices?.[0]?.message?.content?.trim();
+    if (!summary) return null;
+    return { ...fallback, summary };
+  } catch {
+    return null;
+  }
+}
+
+export async function generateSummary(
+  current: CurrentInput,
+): Promise<AISummary> {
   const { temperature, humidity, wind_speed, condition } = current;
   const condText = describeCondition(condition);
 
-  return {
+  const fallback: AISummary = {
     summary: `${condText.charAt(0).toUpperCase() + condText.slice(1)}, ${temperature}°C. Umiditate ${humidity}%, vânt ${wind_speed} km/h.`,
     recommendation: generateRecommendation(temperature, condition, wind_speed),
     alert: checkAlerts(temperature, wind_speed, condition),
   };
+
+  // Prioritate: Gemini → OpenAI → template fallback
+  const gemini = await tryGemini(current, fallback);
+  if (gemini) return gemini;
+
+  const openai = await tryOpenAI(current, fallback);
+  if (openai) return openai;
+
+  return fallback;
 }

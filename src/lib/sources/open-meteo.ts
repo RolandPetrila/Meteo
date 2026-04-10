@@ -78,6 +78,7 @@ export class OpenMeteoSource implements WeatherSource {
       longitude: lon.toString(),
       daily:
         "temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max",
+      hourly: "relative_humidity_2m",
       timezone: "Europe/Bucharest",
       forecast_days: "7",
     });
@@ -87,16 +88,40 @@ export class OpenMeteoSource implements WeatherSource {
     });
     const data = await resp.json();
     const daily = data.daily || {};
+    const hourly = data.hourly || {};
     const dates: string[] = daily.time || [];
 
-    return dates.map((d, i) => ({
-      date: d,
-      day_name: getDayNameRo(d),
-      temp_min: daily.temperature_2m_min?.[i] ?? 0,
-      temp_max: daily.temperature_2m_max?.[i] ?? 0,
-      precipitation: daily.precipitation_sum?.[i] ?? 0,
-      wind_speed: daily.wind_speed_10m_max?.[i] ?? 0,
-      condition: wmoToCondition(daily.weather_code?.[i] ?? 0),
-    }));
+    // Calculeaza media humidity pe zi din date orare
+    const hourlyTimes: string[] = hourly.time || [];
+    const hourlyHumidity: number[] = hourly.relative_humidity_2m || [];
+    const humidityByDay: Record<string, number[]> = {};
+    for (let i = 0; i < hourlyTimes.length; i++) {
+      const dateKey = hourlyTimes[i].split("T")[0];
+      if (!humidityByDay[dateKey]) humidityByDay[dateKey] = [];
+      if (typeof hourlyHumidity[i] === "number") {
+        humidityByDay[dateKey].push(hourlyHumidity[i]);
+      }
+    }
+
+    return dates.map((d, i) => {
+      const dayHumidity = humidityByDay[d] || [];
+      const avgHumidity =
+        dayHumidity.length > 0
+          ? Math.round(
+              dayHumidity.reduce((a, b) => a + b, 0) / dayHumidity.length,
+            )
+          : undefined;
+
+      return {
+        date: d,
+        day_name: getDayNameRo(d),
+        temp_min: daily.temperature_2m_min?.[i] ?? 0,
+        temp_max: daily.temperature_2m_max?.[i] ?? 0,
+        humidity: avgHumidity,
+        precipitation: daily.precipitation_sum?.[i] ?? 0,
+        wind_speed: daily.wind_speed_10m_max?.[i] ?? 0,
+        condition: wmoToCondition(daily.weather_code?.[i] ?? 0),
+      };
+    });
   }
 }

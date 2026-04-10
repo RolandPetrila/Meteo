@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/context/ThemeContext";
+import PrivacyBanner from "@/components/PrivacyBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,9 +38,10 @@ export default function RootLayout({
         <link rel="icon" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className="min-h-screen safe-bottom">
+      <body className="min-h-screen safe-bottom relative">
         <ThemeProvider>
           <main className="max-w-2xl mx-auto pb-8">{children}</main>
+          <PrivacyBanner />
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{

@@ -1,9 +1,15 @@
 "use client";
 
 import ThemeToggle from "./ThemeToggle";
+import FavoritesDropdown from "./FavoritesDropdown";
+import type { FavoriteLocation } from "@/lib/types";
 
 interface HeaderProps {
-  locationName: string;
+  currentLocation: { name: string; latitude: number; longitude: number };
+  favorites: FavoriteLocation[];
+  onSelectFavorite: (lat: number, lon: number, name: string) => void;
+  onAddFavorite: () => void;
+  onRemoveFavorite: (lat: number, lon: number) => void;
   onGPSClick: () => void;
   gpsLoading: boolean;
   confidence: number;
@@ -11,7 +17,11 @@ interface HeaderProps {
 }
 
 export default function Header({
-  locationName,
+  currentLocation,
+  favorites,
+  onSelectFavorite,
+  onAddFavorite,
+  onRemoveFavorite,
   onGPSClick,
   gpsLoading,
   confidence,
@@ -50,11 +60,15 @@ export default function Header({
             </svg>
           </button>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              {locationName}
-            </h1>
+            <FavoritesDropdown
+              current={currentLocation}
+              favorites={favorites}
+              onSelect={onSelectFavorite}
+              onAdd={onAddFavorite}
+              onRemove={onRemoveFavorite}
+            />
             {confidence > 0 && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-dark-surface overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${

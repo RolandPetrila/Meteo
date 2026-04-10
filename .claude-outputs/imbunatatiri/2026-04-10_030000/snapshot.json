@@ -1,0 +1,57 @@
+{
+  "date": "2026-04-10",
+  "commit": "cdc4f16",
+  "stack": {
+    "framework": "Next.js 14 App Router",
+    "language": "TypeScript strict",
+    "styling": "Tailwind CSS + dark mode",
+    "hosting": "Vercel",
+    "pwa": true,
+    "tests": false
+  },
+  "counts": {
+    "existing_improvements": 17,
+    "new_features": 12,
+    "technical_improvements": 9,
+    "total": 38
+  },
+  "priorities": {
+    "P0": 4,
+    "P1": 8,
+    "P2": 8,
+    "P3": 5,
+    "P4": 7
+  },
+  "top_p0": [
+    "WeatherAPI HTTPS (#35)",
+    "AbortController useWeather (#1)",
+    "Daily humidity agregat (#2)",
+    "Validation coordonate API (#15)"
+  ],
+  "top_p1": [
+    "Gemini AI real (#28)",
+    "UI favorite locations (#18)",
+    "Cautare locatie (#20)",
+    "Reverse geocoding (#19)",
+    "Alerte meteo in-app (#21)"
+  ],
+  "architecture_components": {
+    "components": 13,
+    "hooks": 3,
+    "api_routes": 3,
+    "sources": 4,
+    "services": 3,
+    "tabs": 4
+  },
+  "known_issues": [
+    "humidity hardcoded 0 in daily forecast",
+    "no abort controller in useWeather",
+    "favorites hook exists but no UI",
+    "WeatherAPI uses http instead of https",
+    "no automated tests",
+    "wind direction averaged arithmetically (mathematically incorrect)",
+    "map marker not reactive to props",
+    "no loading skeletons",
+    "AI summary template-only (Gemini key available but unused)"
+  ]
+}

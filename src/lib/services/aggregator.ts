@@ -29,7 +29,10 @@ async function fetchWithTiming(
 ): Promise<FetchResult> {
   const start = Date.now();
   try {
-    const data = await source[method](lat, lon);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), 4000),
+    );
+    const data = await Promise.race([source[method](lat, lon), timeoutPromise]);
     return {
       name: source.name,
       data: data as CurrentData,
@@ -297,6 +300,17 @@ export async function aggregateDaily(
         }
       }
 
+      // Media humidity din sursele care o ofera (Open-Meteo o calculeaza)
+      const humidities = items
+        .map((d) => d.humidity)
+        .filter((h): h is number => typeof h === "number" && h > 0);
+      const avgHumidity =
+        humidities.length > 0
+          ? Math.round(
+              humidities.reduce((a, b) => a + b, 0) / humidities.length,
+            )
+          : 0;
+
       return {
         date: dateStr,
         day_name: items[0].day_name,
@@ -304,7 +318,7 @@ export async function aggregateDaily(
           Math.round((mins.reduce((a, b) => a + b, 0) / mins.length) * 10) / 10,
         temp_max:
           Math.round((maxs.reduce((a, b) => a + b, 0) / maxs.length) * 10) / 10,
-        humidity: 0,
+        humidity: avgHumidity,
         precipitation:
           Math.round(Math.max(...items.map((d) => d.precipitation)) * 10) / 10,
         wind_speed:

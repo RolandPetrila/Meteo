@@ -75,6 +75,21 @@ export function getWindDirection(degrees: number): string {
   return dirs[index];
 }
 
+/**
+ * Valideaza coordonate geografice. Returneaza obiect cu lat/lon validate
+ * sau null daca sunt invalide (NaN, Infinity, sau in afara range-ului).
+ */
+export function validateCoords(
+  latStr: string,
+  lonStr: string,
+): { lat: number; lon: number } | null {
+  const lat = Number(latStr);
+  const lon = Number(lonStr);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  return { lat, lon };
+}
+
 export function timeAgo(isoString: string): string {
   const now = new Date();
   const then = new Date(isoString);

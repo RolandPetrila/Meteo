@@ -104,6 +104,7 @@ export interface DailyData {
   day_name: string;
   temp_min: number;
   temp_max: number;
+  humidity?: number;
   precipitation: number;
   wind_speed: number;
   condition: string;

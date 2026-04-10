@@ -50,15 +50,41 @@ export function useLocation() {
     };
   }, []);
 
-  const setLocation = useCallback((lat: number, lon: number, name?: string) => {
-    const loc = {
-      name: name || `${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E`,
-      latitude: lat,
-      longitude: lon,
-    };
-    setCurrentLocation(loc);
-    localStorage.setItem(CURRENT_KEY, JSON.stringify(loc));
-  }, []);
+  const setLocation = useCallback(
+    async (lat: number, lon: number, name?: string) => {
+      // Setam imediat cu nume provizoriu pentru UX rapid
+      const provisional = {
+        name: name || `${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E`,
+        latitude: lat,
+        longitude: lon,
+      };
+      setCurrentLocation(provisional);
+      localStorage.setItem(CURRENT_KEY, JSON.stringify(provisional));
+
+      // Daca nu avem nume sau e doar "Locația mea"/coordonate, incercam reverse geocoding
+      const needsLookup = !name || name === "Locația mea";
+      if (needsLookup) {
+        try {
+          const res = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lon}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.name) {
+              const final = {
+                name: data.name,
+                latitude: lat,
+                longitude: lon,
+              };
+              setCurrentLocation(final);
+              localStorage.setItem(CURRENT_KEY, JSON.stringify(final));
+            }
+          }
+        } catch {
+          // ignora — pastram numele provizoriu
+        }
+      }
+    },
+    [],
+  );
 
   const addFavorite = useCallback(
     (name: string, lat: number, lon: number) => {
