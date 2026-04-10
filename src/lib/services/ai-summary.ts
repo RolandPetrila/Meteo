@@ -145,7 +145,12 @@ Folosește limba română. Tonul: prietenos, direct.`;
     }
 
     try {
-      const parsed = JSON.parse(cleaned);
+      let parsed = JSON.parse(cleaned);
+
+      // Unwrap array: Gemini poate returna [{summary, recommendation}]
+      if (Array.isArray(parsed)) {
+        parsed = parsed[0] || {};
+      }
 
       // Accepta variante de nume pentru campuri (Gemini poate schimba numele)
       const summary =
@@ -175,9 +180,9 @@ Folosește limba română. Tonul: prietenos, direct.`;
         alert: fallback.alert,
       };
     } catch (parseErr) {
-      console.log("[AI] Gemini JSON parse err:", (parseErr as Error).message);
-      console.log("[AI] Text p1:", cleaned.slice(0, 150));
-      console.log("[AI] Text p2:", cleaned.slice(150, 300));
+      console.error(
+        `[AI-DEBUG] ParseErr=${(parseErr as Error).message} | Raw=${JSON.stringify(cleaned).slice(0, 500)}`,
+      );
       return null;
     }
   } catch (err) {
