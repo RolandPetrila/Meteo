@@ -95,21 +95,24 @@ export default function HourlyTab({ hourly }: HourlyTabProps) {
         <TemperatureChart data={hourly.slice(0, 24)} />
       </div>
 
-      {/* Lista ore — grupate per zi cu sticky headers */}
-      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
+      {/* Lista ore — fiecare zi e un card separat cu header sticky */}
+      <div className="space-y-3">
         {sortedDates.map((dateKey) => {
           const hours = grouped[dateKey];
           return (
-            <div key={dateKey}>
-              {/* Sticky header pentru zi */}
-              <div className="sticky top-0 z-10 px-4 py-2 bg-gray-50/95 dark:bg-dark-surface/95 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+            <div
+              key={dateKey}
+              className="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border"
+            >
+              {/* Sticky header pentru zi — ramane vizibil la scroll pagina */}
+              <div className="sticky top-0 z-20 px-4 py-2.5 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-b border-gray-200 dark:border-dark-border rounded-t-2xl">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   {formatDayLabel(dateKey)}
                 </p>
               </div>
 
               {/* Orele din ziua respectiva */}
-              <div className="divide-y divide-gray-100 dark:divide-dark-border">
+              <div className="divide-y divide-gray-100 dark:divide-dark-border overflow-hidden rounded-b-2xl">
                 {hours.map((h) => {
                   const night = isNightHour(h.hour);
                   const precipColor =
