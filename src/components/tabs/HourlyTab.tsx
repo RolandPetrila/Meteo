@@ -2,8 +2,6 @@
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,6 +14,28 @@ import { translateCondition } from "@/lib/utils";
 
 interface HourlyTabProps {
   hourly: HourlyForecast[];
+}
+
+const CONDITION_ICONS: Record<string, string> = {
+  senin: "☀️",
+  predominant_senin: "🌤️",
+  partial_noros: "⛅",
+  noros: "☁️",
+  ceata: "🌫️",
+  ploaie_usoara: "🌦️",
+  ploaie_moderata: "🌧️",
+  ploaie_puternica: "🌧️",
+  ninsoare_usoara: "🌨️",
+  ninsoare_moderata: "❄️",
+  ninsoare_puternica: "❄️",
+  furtuna: "⛈️",
+  averse_usoare: "🌦️",
+  averse_moderate: "🌧️",
+  averse_puternice: "⛈️",
+};
+
+function getIcon(condition: string): string {
+  return CONDITION_ICONS[condition] || "🌡️";
 }
 
 function CustomTooltip({
@@ -105,59 +125,44 @@ export default function HourlyTab({ hourly }: HourlyTabProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Grafic umiditate */}
-      <div className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-dark-border">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-          Umiditate (%)
-        </h3>
-        <ResponsiveContainer width="100%" height={120}>
-          <LineChart data={hourly}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e5e7eb"
-              className="dark:opacity-20"
-            />
-            <XAxis
-              dataKey="hour"
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
-              tickLine={false}
-              axisLine={false}
-              width={35}
-              domain={[0, 100]}
-            />
-            <Line
-              type="monotone"
-              dataKey="humidity"
-              stroke="#06b6d4"
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Lista ore - 24h complet */}
+      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
+        <div className="divide-y divide-gray-100 dark:divide-dark-border">
+          {hourly.map((h) => {
+            const precipColor =
+              h.precipitation >= 5
+                ? "text-red-500"
+                : h.precipitation >= 1
+                  ? "text-amber-500"
+                  : h.precipitation > 0
+                    ? "text-blue-500"
+                    : "text-gray-300 dark:text-gray-600";
 
-      {/* Lista orizontala cu ore */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {hourly.slice(0, 12).map((h) => (
-          <div
-            key={h.hour}
-            className="flex-shrink-0 w-16 bg-white dark:bg-dark-card rounded-xl p-2.5
-                       border border-gray-100 dark:border-dark-border text-center"
-          >
-            <p className="text-xs text-gray-500 dark:text-gray-400">{h.hour}</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
-              {Math.round(h.temperature)}°
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              💧{h.humidity}%
-            </p>
-          </div>
-        ))}
+            return (
+              <div
+                key={h.hour}
+                className="flex items-center justify-between px-4 py-2.5"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 w-12">
+                    {h.hour}
+                  </span>
+                  <span className="text-xl">{getIcon(h.condition)}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-base font-semibold text-gray-900 dark:text-white w-12 text-right">
+                    {Math.round(h.temperature)}°
+                  </span>
+                  <span className={`text-sm w-16 text-right ${precipColor}`}>
+                    {h.precipitation > 0
+                      ? `${h.precipitation.toFixed(1)} mm`
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
