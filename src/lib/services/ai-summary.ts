@@ -84,7 +84,10 @@ async function tryGemini(
   fallback: AISummary,
 ): Promise<AISummary | null> {
   const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.log("[AI] GOOGLE_API_KEY lipseste");
+    return null;
+  }
 
   const condText = describeCondition(current.condition);
   const prompt = `Ești un asistent meteo prietenos pentru România. Generează un rezumat scurt și o recomandare practică pentru utilizator.
@@ -120,21 +123,44 @@ Folosește limba română. Tonul: prietenos, direct.`;
     });
     clearTimeout(timeoutId);
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("[AI] Gemini HTTP eroare:", res.status, await res.text());
+      return null;
+    }
     const json = await res.json();
     const text: string | undefined =
       json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return null;
+    if (!text) {
+      console.log(
+        "[AI] Gemini raspuns fara text:",
+        JSON.stringify(json).slice(0, 300),
+      );
+      return null;
+    }
 
-    const parsed = JSON.parse(text.trim());
-    if (!parsed.summary || !parsed.recommendation) return null;
-
-    return {
-      summary: parsed.summary,
-      recommendation: parsed.recommendation,
-      alert: fallback.alert, // pastreaza alertele rule-based pentru siguranta
-    };
-  } catch {
+    try {
+      const parsed = JSON.parse(text.trim());
+      if (!parsed.summary || !parsed.recommendation) {
+        console.log("[AI] Gemini JSON incomplet:", text.slice(0, 200));
+        return null;
+      }
+      console.log("[AI] Gemini OK");
+      return {
+        summary: parsed.summary,
+        recommendation: parsed.recommendation,
+        alert: fallback.alert,
+      };
+    } catch (parseErr) {
+      console.log(
+        "[AI] Gemini JSON parse err:",
+        (parseErr as Error).message,
+        "text:",
+        text.slice(0, 200),
+      );
+      return null;
+    }
+  } catch (err) {
+    console.log("[AI] Gemini fetch err:", (err as Error).message);
     return null;
   }
 }
