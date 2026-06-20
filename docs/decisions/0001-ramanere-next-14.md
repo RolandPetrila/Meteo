@@ -25,20 +25,21 @@ React 19 + retestare PWA/Recharts/Leaflet/teste. Asta contrazice decizia de arhi
 Config minimal: `next.config.js` conține doar `reactStrictMode` + security headers. App Router.
 Hosting: **Vercel** (managed).
 
-| Clasă advisory | Feature vizat | Folosim? | Aplicabil |
-| --- | --- | --- | --- |
-| Image Optimizer DoS / cache (×3) | `next/image`, `remotePatterns` | NU | **NU** |
-| Middleware/Proxy bypass & cache poison (×2) | `middleware.ts`, i18n | NU | **NU** |
-| Request smuggling în rewrites | `rewrites()` | NU | **NU** |
-| SSRF via WebSocket upgrade | WebSocket / custom server | NU | **NU** |
-| XSS cu CSP nonces | nonce / CSP | NU | **NU** |
-| XSS în `beforeInteractive` | `next/script` | NU | **NU** |
-| RSC DoS (×3) | Server Components | DA (App Router) | posibil (DoS) |
-| RSC cache poisoning (×2) | RSC cached pe CDN | DA (App Router) | posibil, mic |
-| postcss XSS (moderate) | procesare CSS untrusted la build | NU (CSS propriu) | **NU** |
+| Clasă advisory                              | Feature vizat                    | Folosim?         | Aplicabil     |
+| ------------------------------------------- | -------------------------------- | ---------------- | ------------- |
+| Image Optimizer DoS / cache (×3)            | `next/image`, `remotePatterns`   | NU               | **NU**        |
+| Middleware/Proxy bypass & cache poison (×2) | `middleware.ts`, i18n            | NU               | **NU**        |
+| Request smuggling în rewrites               | `rewrites()`                     | NU               | **NU**        |
+| SSRF via WebSocket upgrade                  | WebSocket / custom server        | NU               | **NU**        |
+| XSS cu CSP nonces                           | nonce / CSP                      | NU               | **NU**        |
+| XSS în `beforeInteractive`                  | `next/script`                    | NU               | **NU**        |
+| RSC DoS (×3)                                | Server Components                | DA (App Router)  | posibil (DoS) |
+| RSC cache poisoning (×2)                    | RSC cached pe CDN                | DA (App Router)  | posibil, mic  |
+| postcss XSS (moderate)                      | procesare CSS untrusted la build | NU (CSS propriu) | **NU**        |
 
 **~10 din ~14 advisory-uri nu ne ating.** Cele ~4 rămase (clasă RSC: DoS + cache poisoning) sunt
 atenuate de:
+
 - **Vercel** (rate limiting, timeouts pe funcții, scaling, cache managed) → DoS-ul de framework e
   absorbit la nivel de platformă;
 - aplicație **read-only, fără auth, fără date personale**, fără input untrusted dincolo de `lat/lon`
